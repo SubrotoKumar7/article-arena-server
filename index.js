@@ -61,6 +61,19 @@ const client = new MongoClient(uri, {
             res.send(result);
         })
 
+        app.patch('/users', async(req, res)=> {
+            const {email, role} = req.body;
+            const query = {email};
+            const updateRole = {
+                $set: {
+                    role: role
+                }
+            }
+
+            const result = await usersCollections.updateOne(query, updateRole);
+            res.send(result);
+        })
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
