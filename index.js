@@ -39,6 +39,13 @@ const client = new MongoClient(uri, {
             res.send(result);
         })
 
+        app.get('/users/:email/role', async(req, res)=> {
+            const email = req.params.email;
+            const query = {email};
+            const user = await usersCollections.findOne(query);
+            res.send({role: user?.role || 'users'});
+        })
+
         app.post('/users', async(req, res)=> {
             const userData = req.body;
             const {email} = userData;
