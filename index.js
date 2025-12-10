@@ -2,10 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const bcrypt = require('bcrypt');
 const app = express();
 const port = process.env.PORT || 5000;
-const saltRounds = 10;
 
 // middleware
 app.use(express.json());
@@ -43,8 +41,15 @@ const client = new MongoClient(uri, {
 
         app.post('/users', async(req, res)=> {
             const userData = req.body;
-            const salted = await bcrypt.hash(userData.password, saltRounds);
-            userData.password = salted;
+            const {email} = userData;
+            userData.createdAt = new Date();
+            userData.role = "user";
+            const userExits = await usersCollections.findOne({email});
+
+            if(userExits){
+                return res.json({message: "user already exits"})    
+            }
+            
             const result = await usersCollections.insertOne(userData);
             res.send(result);
         })
