@@ -30,6 +30,7 @@ const client = new MongoClient(uri, {
 
         const database = client.db('article_arena');
         const usersCollections = database.collection('users');
+        const contestCollections = database.collection('contest');
 
         // ? users related api
         app.get('/users', async(req, res)=> {
@@ -71,6 +72,23 @@ const client = new MongoClient(uri, {
             }
 
             const result = await usersCollections.updateOne(query, updateRole);
+            res.send(result);
+        })
+
+
+        // ? pending Contest
+        app.get('/contest', async(req, res)=> {
+            const query = {};
+            const cursor = contestCollections.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        app.post('/contest', async(req, res)=> {
+            const contestInfo = req.body;
+            contestInfo.status = "pending";
+            contestInfo.createdAt = new Date();
+            const result = await contestCollections.insertOne(contestInfo);
             res.send(result);
         })
 
