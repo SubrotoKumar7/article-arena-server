@@ -134,6 +134,13 @@ const client = new MongoClient(uri, {
             res.send(result);
         })
 
+        app.get('/contest/:id', async(req, res)=> {
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const result = await contestCollections.findOne(query);
+            res.send(result);
+        })
+
         app.get('/my-contest', verifyToken, verifyCreator, async(req, res)=> {
             const email = req.decode_email;
             const query = {creatorEmail: email};
@@ -147,6 +154,20 @@ const client = new MongoClient(uri, {
             contestInfo.status = "pending";
             contestInfo.createdAt = new Date();
             const result = await contestCollections.insertOne(contestInfo);
+            res.send(result);
+        })
+
+        app.patch('/contest/:id', async(req, res)=> {
+            const id = req.params.id;
+            const info = req.body;
+            const query = {_id: new ObjectId(id)};
+            const options = {};
+            const update = {
+                $set: {
+                    ...info
+                }
+            }
+            const result = await contestCollections.updateOne(query, update, options);
             res.send(result);
         })
 
