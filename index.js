@@ -2,8 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const admin = require("firebase-admin");
 const app = express();
 const port = process.env.PORT || 5000;
+
+
+const serviceAccount = require("./article-arena-firebase-adminsdk.json");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
 
 // middleware
 app.use(express.json());
@@ -12,6 +21,23 @@ app.use(cors());
 app.get('/', async(req, res)=> {
     res.send('article arena server is running');
 })
+
+const verifyToken = async(req, res, next)=> {
+    const token = req.headers.authorization.split(" ")[1];
+    
+    if(!token){
+        return res.status(401).send({message: "Unauthorized access"});
+    }
+
+    try {
+        const decode = await admin.auth().verifyIdToken(token);
+        req.decode_email = decode.email;
+        next();
+    } catch (error) {
+        return res.status(401).send({message: "Unauthorized access"});
+    }
+
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@first-db.5h5o2p2.mongodb.net/?appName=first-db`;
@@ -31,6 +57,30 @@ const client = new MongoClient(uri, {
         const database = client.db('article_arena');
         const usersCollections = database.collection('users');
         const contestCollections = database.collection('contest');
+
+        // middleware inside db
+        const verifyAdmin = async(req, res, next) => {
+            const email = req.decode_email;
+            const query = {email};
+            const user = await usersCollections.findOne(query);
+            const role = user.role;
+            if(!user || role !== 'admin'){
+                return res.status(403).send({message: "Forbidden access"});
+            }
+            next();
+        }
+
+        const verifyCreator = async(req, res, next) => {
+            const email = req.decode_email;
+            const query = {email};
+            const user = await usersCollections.findOne(query);
+            const role = user.role;
+            if(!user || role !== 'creator'){
+                return res.status(403).send({message: "Forbidden access"});
+            }
+            next();
+        }
+
 
         // ? users related api
         app.get('/users', async(req, res)=> {
@@ -62,7 +112,7 @@ const client = new MongoClient(uri, {
             res.send(result);
         })
 
-        app.patch('/users', async(req, res)=> {
+        app.patch('/users', verifyToken, verifyAdmin, async(req, res)=> {
             const {email, role} = req.body;
             const query = {email};
             const updateRole = {
