@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const admin = require("firebase-admin");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -126,9 +126,17 @@ const client = new MongoClient(uri, {
         })
 
 
-        // ? pending Contest
-        app.get('/contest', async(req, res)=> {
+        // ? Contest related api
+        app.get('/contest', verifyToken, verifyCreator, async(req, res)=> {
             const query = {};
+            const cursor = contestCollections.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        app.get('/my-contest', verifyToken, verifyCreator, async(req, res)=> {
+            const email = req.decode_email;
+            const query = {creatorEmail: email};
             const cursor = contestCollections.find(query);
             const result = await cursor.toArray();
             res.send(result);
@@ -139,6 +147,13 @@ const client = new MongoClient(uri, {
             contestInfo.status = "pending";
             contestInfo.createdAt = new Date();
             const result = await contestCollections.insertOne(contestInfo);
+            res.send(result);
+        })
+
+        app.delete('/contest/:id', async(req, res)=> {
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const result = await contestCollections.deleteOne(query);
             res.send(result);
         })
 
