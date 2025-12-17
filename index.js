@@ -125,6 +125,21 @@ const client = new MongoClient(uri, {
             res.send(result);
         })
 
+        app.patch('/update-user',verifyToken, async(req, res)=> {
+            const email = req.decode_email;
+            const userInfo = req.body;
+            const query = {email};
+
+            const updateInfo = {
+                $set: {
+                    ...userInfo
+                }
+            }
+            
+            const result = await usersCollections.updateOne(query, updateInfo);
+            res.send(result);
+        })
+
 
         // ? Contest related api
         app.get('/contest', verifyToken, verifyCreator, async(req, res)=> {
