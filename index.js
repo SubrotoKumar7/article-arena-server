@@ -164,6 +164,13 @@ const client = new MongoClient(uri, {
             res.send(result);
         })
 
+        app.get('/pending-contest', async(req, res)=> {
+            const query = {status: "pending"};
+            const cursor = contestCollections.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
         app.post('/contest', async(req, res)=> {
             const contestInfo = req.body;
             contestInfo.status = "pending";
