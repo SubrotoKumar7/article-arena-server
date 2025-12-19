@@ -4,6 +4,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const admin = require("firebase-admin");
 const app = express();
+const stripe = require('stripe')(process.env.STRIPE_KEY);
 const port = process.env.PORT || 5000;
 
 
@@ -222,6 +223,35 @@ const client = new MongoClient(uri, {
             const query = {_id: new ObjectId(id)};
             const result = await contestCollections.deleteOne(query);
             res.send(result);
+        })
+
+        // ? payment related api
+        app.post('/create-checkout-session', async(req, res)=> {
+            const paymentInfo = req.body;
+            const session = await stripe.checkout.sessions.create({
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'usd',
+                            product_data: {
+                                name: paymentInfo.contestName,
+                                images: [paymentInfo.contestImage],
+                                description: paymentInfo.description
+                            },
+                            unit_amount: Number(paymentInfo.price) * 100
+                        },
+                        quantity: 1,
+                    }
+                ],
+                mode: 'payment',
+                metadata: {
+                    contestId: paymentInfo.contestId
+                },
+                customer_email: paymentInfo.customerEmail,
+                success_url: `${process.env.SITE_DOMAIN}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${process.env.SITE_DOMAIN}/payment-cancel`,
+            });
+            res.send({url: session.url});
         })
 
 
