@@ -58,6 +58,7 @@ const client = new MongoClient(uri, {
         const database = client.db('article_arena');
         const usersCollections = database.collection('users');
         const contestCollections = database.collection('contest');
+        const paymentCollections = database.collection('payment');
 
         // middleware inside db
         const verifyAdmin = async(req, res, next) => {
@@ -245,13 +246,43 @@ const client = new MongoClient(uri, {
                 ],
                 mode: 'payment',
                 metadata: {
-                    contestId: paymentInfo.contestId
+                    contestId: paymentInfo.contestId,
+                    contestName: paymentInfo.contestName
                 },
                 customer_email: paymentInfo.customerEmail,
                 success_url: `${process.env.SITE_DOMAIN}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${process.env.SITE_DOMAIN}/payment-cancel`,
             });
             res.send({url: session.url});
+        })
+
+        app.patch('/payment-success', async(req, res)=> {
+            const sessionId = req.query.session_id;
+            const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+            if(session.payment_status === 'paid'){
+                const id = session.metadata.contestId;
+                const query = {_id: new ObjectId(id)};
+                const update = {
+                    $inc: {participant: 1},
+                    $set: {
+                        paymentStatus: 'paid'
+                    }
+                }
+                const result = await contestCollections.updateOne(query, update);
+                const payment = {
+                    transactionId : session.payment_intent,
+                    contestId: session.metadata.contestId,
+                    email: session.customer_email,
+                    payAmount: session.amount_total / 100,
+                    currency: session.currency,
+                    contestName: session.metadata.contestName,
+                    paymentAt: new Date()
+                }
+                const paymentResult = await paymentCollections.insertOne(payment);
+                res.send(result);
+            }
+            res.send({success: true});
         })
 
 
