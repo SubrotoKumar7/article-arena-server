@@ -59,6 +59,7 @@ const client = new MongoClient(uri, {
         const usersCollections = database.collection('users');
         const contestCollections = database.collection('contest');
         const paymentCollections = database.collection('payment');
+        const participantCollections = database.collection('participant');
 
         // middleware inside db
         const verifyAdmin = async(req, res, next) => {
@@ -271,10 +272,7 @@ const client = new MongoClient(uri, {
                 const id = session.metadata.contestId;
                 const query = {_id: new ObjectId(id)};
                 const update = {
-                    $inc: {participant: 1},
-                    $set: {
-                        paymentStatus: 'paid'
-                    }
+                    $inc: {participant: 1}
                 }
                 const result = await contestCollections.updateOne(query, update);
                 const payment = {
@@ -287,6 +285,19 @@ const client = new MongoClient(uri, {
                     paymentAt: new Date()
                 }
                 const paymentResult = await paymentCollections.insertOne(payment);
+
+                const userQuery = {email: session.customer_email};
+                const userResult = await usersCollections.findOne(userQuery);
+
+                const participantInfo = {
+                    contestId: session.metadata.contestId,
+                    participantEmail: session.customer_email,
+                    displayName: userResult.displayName,
+                    photoURL: userResult.photoURL,
+                }
+
+                const participantResult = await participantCollections.insertOne(participantInfo);
+
                 res.send(result);
             }
             res.send({success: true});
