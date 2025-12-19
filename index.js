@@ -289,8 +289,17 @@ const client = new MongoClient(uri, {
                 const userQuery = {email: session.customer_email};
                 const userResult = await usersCollections.findOne(userQuery);
 
+                // find contest data via id
+                const contestQuery = {_id: new ObjectId(session.metadata.contestId)};
+                const contestResult = await contestCollections.findOne(contestQuery);
+
                 const participantInfo = {
                     contestId: session.metadata.contestId,
+                    contestName: contestResult.contestName,
+                    category: contestResult.category,
+                    prizeMoney: contestResult.prizeMoney,
+                    price: contestResult.price,
+                    deadline: contestResult.deadline,
                     participantEmail: session.customer_email,
                     displayName: userResult.displayName,
                     photoURL: userResult.photoURL,
@@ -301,6 +310,16 @@ const client = new MongoClient(uri, {
                 res.send(result);
             }
             res.send({success: true});
+        })
+
+
+        // ? participant related api
+        app.get('/my-joined-contest', verifyToken, async(req, res)=> {
+            const email = req.decode_email;
+            const query = {participantEmail: email};
+            const cursor = participantCollections.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
         })
 
 
