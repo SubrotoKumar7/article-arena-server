@@ -259,6 +259,13 @@ const client = new MongoClient(uri, {
         app.patch('/payment-success', async(req, res)=> {
             const sessionId = req.query.session_id;
             const session = await stripe.checkout.sessions.retrieve(sessionId);
+            const transactionId = session.payment_intent;
+            const query = {transactionId};
+            const exist = await paymentCollections.findOne(query);
+
+            if(exist){
+                return res.send({message: "Payment already exists"});
+            }
 
             if(session.payment_status === 'paid'){
                 const id = session.metadata.contestId;
