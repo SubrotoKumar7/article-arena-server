@@ -347,6 +347,14 @@ const client = new MongoClient(uri, {
         })
 
         // ? submitted task related api
+        app.get('/submit-contest/:id', async(req, res)=> {
+            const contestId = req.params.id;
+            const query = {contestId: contestId};
+            const cursor = submittedContestCollections.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
         app.post('/submit-contest', async(req, res)=> {
             const submitTask = req.body;
             const query = {
