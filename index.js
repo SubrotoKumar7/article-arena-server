@@ -231,6 +231,15 @@ const client = new MongoClient(uri, {
         // ? payment related api
         app.post('/create-checkout-session', async(req, res)=> {
             const paymentInfo = req.body;
+            const {contestId, customerEmail} = paymentInfo;
+
+            const query = {contestId, participantEmail: customerEmail};
+            const alreadyJoined = await participantCollections.findOne(query);
+
+            if(alreadyJoined){
+                return res.send({message: "already joined this content"});
+            };
+
             const session = await stripe.checkout.sessions.create({
                 line_items: [
                     {
