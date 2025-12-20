@@ -162,7 +162,15 @@ const client = new MongoClient(uri, {
 
         app.get('/my-contest', verifyToken, verifyCreator, async(req, res)=> {
             const email = req.decode_email;
-            const query = {creatorEmail: email};
+            const contestStatus = req.query.status;
+            let query;
+
+            if(contestStatus === 'approved'){
+                query = {creatorEmail: email, status: contestStatus};
+            }else{
+                query = {creatorEmail: email};
+            }
+
             const cursor = contestCollections.find(query);
             const result = await cursor.toArray();
             res.send(result);
