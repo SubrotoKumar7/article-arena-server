@@ -60,6 +60,7 @@ const client = new MongoClient(uri, {
         const contestCollections = database.collection('contest');
         const paymentCollections = database.collection('payment');
         const participantCollections = database.collection('participant');
+        const submittedContestCollections = database.collection('submitted_contest')
 
         // middleware inside db
         const verifyAdmin = async(req, res, next) => {
@@ -268,13 +269,19 @@ const client = new MongoClient(uri, {
                 return res.send({message: "Payment already exists"});
             }
 
+            if (session.payment_status !== 'paid') {
+                return res.send({ success: false, message: "Payment not completed" });
+            }
+
             if(session.payment_status === 'paid'){
                 const id = session.metadata.contestId;
-                const query = {_id: new ObjectId(id)};
+                const findQuery = {_id: new ObjectId(id)};
                 const update = {
                     $inc: {participant: 1}
                 }
-                const result = await contestCollections.updateOne(query, update);
+                const result = await contestCollections.updateOne(findQuery, update);
+
+                // payment info
                 const payment = {
                     transactionId : session.payment_intent,
                     contestId: session.metadata.contestId,
@@ -303,24 +310,43 @@ const client = new MongoClient(uri, {
                     participantEmail: session.customer_email,
                     displayName: userResult.displayName,
                     photoURL: userResult.photoURL,
+                    isSubmit: 'no'
                 }
 
                 const participantResult = await participantCollections.insertOne(participantInfo);
 
-                res.send(result);
+                return res.send(result);
             }
-            res.send({success: true});
         })
 
 
         // ? participant related api
         app.get('/my-joined-contest', verifyToken, async(req, res)=> {
             const email = req.decode_email;
-            const query = {participantEmail: email};
+            const query = {participantEmail: email, isSubmit: "no"};
             const cursor = participantCollections.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
+
+        // ? submitted task related api
+        app.post('/submit-contest', async(req, res)=> {
+            const submitTask = req.body;
+            const query = {
+                contestId: submitTask.contestId,
+                participantEmail: submitTask.email
+            };
+
+            const update = {
+                $set: {
+                    isSubmit: 'yes'
+                }
+            }
+            const contestResult = await participantCollections.updateOne(query, update);
+            const result = await submittedContestCollections.insertOne(submitTask);
+            res.send(result);
+        })
+
 
 
         await client.db("admin").command({ ping: 1 });
