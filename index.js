@@ -376,6 +376,13 @@ const client = new MongoClient(uri, {
 
 
         // ? winner related api
+        app.get('/contest-winner/:id', async(req, res)=> {
+            const id = req.params.id;
+            const query = {contestId: id};
+            const result = await winnerCollections.findOne(query);
+            res.send(result);
+        })
+
         app.post('/declare-winner', async(req, res)=> {
             const winnerInfo = req.body;
             winnerInfo.createdAt = new Date();
