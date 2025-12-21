@@ -376,6 +376,14 @@ const client = new MongoClient(uri, {
 
 
         // ? winner related api
+        app.get('/winning-contest', verifyToken, async(req, res)=> {
+            const email = req.decode_email;
+            const query = {winnerEmail: email};
+            const cursor = winnerCollections.find(query).sort({createdAt: -1});
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
         app.get('/contest-winner/:id', async(req, res)=> {
             const id = req.params.id;
             const query = {contestId: id};
