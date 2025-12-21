@@ -60,7 +60,8 @@ const client = new MongoClient(uri, {
         const contestCollections = database.collection('contest');
         const paymentCollections = database.collection('payment');
         const participantCollections = database.collection('participant');
-        const submittedContestCollections = database.collection('submitted_contest')
+        const submittedContestCollections = database.collection('submitted_contest');
+        const winnerCollections = database.collection('winner');
 
         // middleware inside db
         const verifyAdmin = async(req, res, next) => {
@@ -211,6 +212,7 @@ const client = new MongoClient(uri, {
             const contestInfo = req.body;
             contestInfo.status = "pending";
             contestInfo.createdAt = new Date();
+            contestInfo.winnerDeclare = 'no';
             const result = await contestCollections.insertOne(contestInfo);
             res.send(result);
         })
@@ -369,6 +371,30 @@ const client = new MongoClient(uri, {
             }
             const contestResult = await participantCollections.updateOne(query, update);
             const result = await submittedContestCollections.insertOne(submitTask);
+            res.send(result);
+        })
+
+
+        // ? winner related api
+        app.post('/declare-winner', async(req, res)=> {
+            const winnerInfo = req.body;
+            winnerInfo.createdAt = new Date();
+            const {contestId} = winnerInfo;
+
+            const query = {contestId};
+            const winnerExits = await winnerCollections.findOne(query);
+            if(winnerExits){
+                return res.send({message: 'Winner already declare'});
+            };
+
+            const updateWinner = {
+                $set: {
+                    winnerDeclare: 'yes'
+                }
+            }
+            const updateResult = await submittedContestCollections.updateMany(query, updateWinner); 
+
+            const result = await winnerCollections.insertOne(winnerInfo);
             res.send(result);
         })
 
