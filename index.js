@@ -383,6 +383,13 @@ const client = new MongoClient(uri, {
             res.send(result);
         })
 
+        app.get('/latest-winner', async(req, res)=> {
+            const sort = {createdAt: -1};
+            const cursor = winnerCollections.find().sort(sort).limit(1);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
         app.post('/declare-winner', async(req, res)=> {
             const winnerInfo = req.body;
             winnerInfo.createdAt = new Date();
