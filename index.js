@@ -200,7 +200,7 @@ const client = new MongoClient(uri, {
             const skip = (page - 1) * limit;
 
             const query = { status: 'approved' };
-            const contests = await contestCollections.find(query).skip(skip).limit(limit).toArray();
+            const contests = await contestCollections.find(query).sort({createdAt: -1}).skip(skip).limit(limit).toArray();
             const total = await contestCollections.countDocuments(query);
 
             res.send({contests, total, totalPages: Math.ceil(total / limit), currentPage: page});
