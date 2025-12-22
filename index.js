@@ -424,6 +424,45 @@ const client = new MongoClient(uri, {
         })
 
 
+        // ? admin dashboard summary
+        app.get('/admin-dashboard', verifyToken, verifyAdmin, async(req, res)=> {
+
+            const allUser = await usersCollections.countDocuments({});
+            const totalAdmin = await usersCollections.countDocuments({role: 'admin'});
+            const totalCreator = await usersCollections.countDocuments({role: 'creator'});
+            const totalNormalUser = await usersCollections.countDocuments({role: 'user'});
+
+            const totalContest = await contestCollections.countDocuments({});
+            const pendingContest = await contestCollections.countDocuments({status: 'pending'});
+            const rejectContest = await contestCollections.countDocuments({status: 'rejected'});
+            const approvedContest = await contestCollections.countDocuments({status: 'approved'});
+
+
+            const totalPayment = await paymentCollections.countDocuments({});
+
+            const totalWinner = await winnerCollections.countDocuments({});
+
+            const totalParticipant = await participantCollections.countDocuments({});
+
+            const totalSubmitContest = await submittedContestCollections.countDocuments({});
+
+            res.send({
+                allUser,
+                totalAdmin,
+                totalCreator,
+                totalNormalUser,
+                totalContest,
+                approvedContest,
+                pendingContest,
+                rejectContest,
+                totalPayment,
+                totalWinner,
+                totalParticipant,
+                totalSubmitContest
+            })
+        })
+
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
