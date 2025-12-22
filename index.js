@@ -462,6 +462,23 @@ const client = new MongoClient(uri, {
             })
         })
 
+        // ? creator dashboard summary
+        app.get('/creator-dashboard',verifyToken, verifyCreator, async(req, res)=> {
+            const email = req.decode_email;
+
+            const totalContest = await contestCollections.countDocuments({creatorEmail: email});
+            const pendingContest = await contestCollections.countDocuments({creatorEmail: email, status: 'pending'});
+            const rejectedContest = await contestCollections.countDocuments({creatorEmail: email, status: 'rejected'});
+            const activeContest = await contestCollections.countDocuments({creatorEmail: email, winnerDeclare: 'no'});
+
+            res.send({
+                totalContest,
+                pendingContest,
+                rejectedContest,
+                activeContest
+            })
+        })
+
 
 
         await client.db("admin").command({ ping: 1 });
