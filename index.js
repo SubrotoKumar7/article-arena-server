@@ -393,7 +393,7 @@ const client = new MongoClient(uri, {
 
         app.get('/latest-winner', async(req, res)=> {
             const sort = {createdAt: -1};
-            const cursor = winnerCollections.find().sort(sort).limit(1);
+            const cursor = winnerCollections.find().sort(sort);
             const result = await cursor.toArray();
             res.send(result);
         })
