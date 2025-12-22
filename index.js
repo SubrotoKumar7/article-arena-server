@@ -95,6 +95,13 @@ const client = new MongoClient(uri, {
             res.send(result);
         })
 
+        app.get('/user-profile', verifyToken , async(req, res)=> {
+            const email = req.decode_email;
+            const query = {email};
+            const result = await usersCollections.findOne(query);
+            res.send(result);
+        })
+
         app.get('/users/:email/role', async(req, res)=> {
             const email = req.params.email;
             const query = {email};
