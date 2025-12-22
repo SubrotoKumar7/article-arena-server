@@ -518,6 +518,56 @@ const client = new MongoClient(uri, {
             res.send({totalWinner, totalPrizeMoney});
         })
 
+        // ? leaderboard api
+        app.get('/leaderboard', async (req, res) => {
+            try {
+                const leaderboard = await winnerCollections.aggregate([
+                {
+                    $group: {
+                    _id: "$winnerEmail",              
+                    winnerName: { $first: "$winnerName" },
+                    winnerPhoto: { $first: "$winnerPhoto" },
+                    totalWins: { $sum: 1 },
+                    totalPrize: { $sum: "$prizeMoney" },
+                    recentWin: { $last: "$contestName" }
+                    }
+                },
+                {
+                    $lookup: {
+                    from: "participant",
+                    localField: "_id",               
+                    foreignField: "participantEmail",
+                    as: "participations"
+                    }
+                },
+                {
+                    $addFields: {
+                    totalParticipations: { $size: "$participations" },
+                    winningPercentage: {
+                        $cond: [
+                        { $eq: [{ $size: "$participations" }, 0] },
+                        0,
+                        { $multiply: [{ $divide: ["$totalWins", { $size: "$participations" }] }, 100] }
+                        ]
+                    }
+                    }
+                },
+                {
+                    $project: {
+                    participations: 0
+                    }
+                },
+                { $sort: { totalWins: -1, totalPrize: -1 } }
+                ]).toArray();
+
+                res.send(leaderboard);
+
+            } catch (err) {
+                console.error(err);
+                res.status(500).send({ error: "Something went wrong" });
+            }
+        });
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
