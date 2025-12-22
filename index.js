@@ -496,10 +496,26 @@ const client = new MongoClient(uri, {
                 }
             ]).toArray();
             const totalMoney = totalPrize.length > 0 ? totalPrize[0].totalMoney : 0;
-            
+
             const winningPercentage = ((totalWin / totalParticipant) * 100).toFixed(2);
             
             res.send({totalParticipant, totalWin, totalMoney, winningPercentage});
+        })
+
+        app.get('/winner-and-prize', async(req, res)=> {
+            const totalWinner = await winnerCollections.countDocuments({});
+            const result = await winnerCollections.aggregate([
+                {
+                    $group: {
+                    _id: null,
+                    totalPrizeMoney: { $sum: "$prizeMoney" }
+                    }
+                }
+                ]).toArray();
+
+            const totalPrizeMoney = result[0]?.totalPrizeMoney || 0;
+
+            res.send({totalWinner, totalPrizeMoney});
         })
 
 
