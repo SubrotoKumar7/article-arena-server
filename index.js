@@ -172,7 +172,7 @@ const client = new MongoClient(uri, {
                 query = {creatorEmail: email};
             }
 
-            const cursor = contestCollections.find(query);
+            const cursor = contestCollections.find(query).sort({createdAt: -1});
             const result = await cursor.toArray();
             res.send(result);
         })
