@@ -479,6 +479,28 @@ const client = new MongoClient(uri, {
             })
         })
 
+        // ? user dashboard summary
+        app.get('/user-dashboard', verifyToken, async(req, res)=> {
+            const email = req.decode_email;
+
+            const totalParticipant = await participantCollections.countDocuments({participantEmail: email});
+            const totalWin = await winnerCollections.countDocuments({winnerEmail: email});
+
+            const totalPrize = await winnerCollections.aggregate([
+                { $match: { winnerEmail: email } },
+                {
+                $group: {
+                    _id: null,
+                    totalMoney: { $sum: "$prizeMoney" }
+                }
+                }
+            ]).toArray();
+            const totalMoney = totalPrize.length > 0 ? totalPrize[0].totalMoney : 0;
+            
+            const winningPercentage = ((totalWin / totalParticipant) * 100).toFixed(2);
+            
+            res.send({totalParticipant, totalWin, totalMoney, winningPercentage});
+        })
 
 
         await client.db("admin").command({ ping: 1 });
