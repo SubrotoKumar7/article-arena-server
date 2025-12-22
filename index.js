@@ -167,7 +167,7 @@ const client = new MongoClient(uri, {
             let query;
 
             if(contestStatus === 'approved'){
-                query = {creatorEmail: email, status: contestStatus};
+                query = {creatorEmail: email, status: contestStatus, participant: {$gt: 0}, winnerDeclare: 'no'};
             }else{
                 query = {creatorEmail: email};
             }
@@ -414,7 +414,10 @@ const client = new MongoClient(uri, {
                     winnerDeclare: 'yes'
                 }
             }
-            const updateResult = await submittedContestCollections.updateMany(query, updateWinner); 
+            const updateResult = await submittedContestCollections.updateMany(query, updateWinner);
+
+            const contestQuery = {_id: new ObjectId(contestId)};
+            const contentUpdateResult = await contestCollections.updateOne(contestQuery, updateWinner);
 
             const result = await winnerCollections.insertOne(winnerInfo);
             res.send(result);
