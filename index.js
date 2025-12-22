@@ -8,7 +8,8 @@ const stripe = require('stripe')(process.env.STRIPE_KEY);
 const port = process.env.PORT || 5000;
 
 
-const serviceAccount = require("./article-arena-firebase-adminsdk.json");
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
+const serviceAccount = JSON.parse(decoded); 
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -53,7 +54,7 @@ const client = new MongoClient(uri, {
 
     async function run() {
     try {
-        await client.connect();
+        // await client.connect();
 
         const database = client.db('article_arena');
         const usersCollections = database.collection('users');
@@ -576,8 +577,8 @@ const client = new MongoClient(uri, {
         });
 
 
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // await client.close();
     }

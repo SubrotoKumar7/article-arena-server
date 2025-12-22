@@ -1,3 +1,4 @@
 node_modules
 .env
 article-arena-firebase-adminsdk.json
+.vercel
