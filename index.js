@@ -505,7 +505,7 @@ const client = new MongoClient(uri, {
             ]).toArray();
             const totalMoney = totalPrize.length > 0 ? totalPrize[0].totalMoney : 0;
 
-            const winningPercentage = ((totalWin / totalParticipant) * 100).toFixed(2);
+            const winningPercentage = (((totalWin / totalParticipant) || 0) * 100).toFixed(2);
             
             res.send({totalParticipant, totalWin, totalMoney, winningPercentage});
         })
